@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    input, button {
+      margin: 5px 0;
+    }
+  </style>
+  <script>
+    const owner = 'your-github-username';
+    const repo = 'your-repo-name';
+    const path = 'data.json'; // Path to your data file in the repository
+    const token = 'your-personal-access-token'; // Your GitHub Personal Access Token
+
+    async function fetchData() {
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (response.ok) {
+        const fileData = await response.json();
+        const content = atob(fileData.content); // Decode base64 content
+        return JSON.parse(content);
+      } else {
+        console.error('Error fetching data:', response.status, response.statusText);
+      }
+    }
+
+    async function updateData(data) {
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+
+      const currentData = await fetchData();
+      const sha = (await fetch(url, {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      })).json().then(res => res.sha);
+
+      const updatedContent = btoa(JSON.stringify(data, null, 2));
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: 'Update data',
+          content: updatedContent,
+          sha: sha
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Error updating data:', response.status, response.statusText);
+      }
+    }
+
+    async function searchData() {
+      const nomorInduk = document.getElementById('searchNomorInduk').value;
+      const namaPemilik = document.getElementById('searchNamaPemilik').value;
+
+      const data = await fetchData();
+
+      let result = null;
+      if (nomorInduk) {
+        result = data.find(item => item.nomorInduk === nomorInduk);
+      } else if (namaPemilik) {
+        result = data.find(item => item.namaPemilik.toLowerCase() === namaPemilik.toLowerCase());
+      }
+
+      if (result) {
+        document.getElementById('result').innerText = `Nomor Induk: ${result.nomorInduk}\nNama Bangunan: ${result.namaBangunan}\nNama Pemilik: ${result.namaPemilik}\nDistrik: ${result.distrik}\nJalan: ${result.jalan}`;
+      } else {
+        document.getElementById('result').innerText = 'Data not found';
+      }
+    }
+
+    async function addData() {
+      const confirmation = document.getElementById('addConfirmation').value.toLowerCase();
+      if (confirmation !== 'tambah') {
+        alert('Please type "tambah" to confirm addition.');
+        return;
+      }
+
+      const nomorInduk = document.getElementById('addNomorInduk').value;
+      const namaBangunan = document.getElementById('addNamaBangunan').value;
+      const namaPemilik = document.getElementById('addNamaPemilik').value;
+      const distrik = document.getElementById('addDistrik').value;
+      const jalan = document.getElementById('addJalan').value;
+
+      const newData = { nomorInduk, namaBangunan, namaPemilik, distrik, jalan };
+
+      const data = await fetchData();
+      data.push(newData);
+      await updateData(data);
+
+      document.getElementById('addForm').reset();
+      alert('Data added successfully');
+    }
+
+    async function deleteData() {
+      const confirmation = document.getElementById('deleteConfirmation').value.toLowerCase();
+      if (confirmation !== 'hapus') {
+        alert('Please type "hapus" to confirm deletion.');
+        return;
+      }
+
+      const nomorInduk = document.getElementById('deleteNomorInduk').value;
+
+      let data = await fetchData();
+      data = data.filter(item => item.nomorInduk !== nomorInduk);
+      await updateData(data);
+
+      document.getElementById('deleteForm').reset();
+      alert('Data deleted successfully');
+    }
+  </script>
+</head>
+<body>
+  <h1>Data Management</h1>
+
+  <h2>Search Data</h2>
+  <input type="text" id="searchNomorInduk" placeholder="Enter Nomor Induk">
+  <input type="text" id="searchNamaPemilik" placeholder="Enter Nama Pemilik">
+  <button onclick="searchData()">Search</button>
+  <pre id="result"></pre>
+
+  <h2>Add Data</h2>
+  <form id="addForm">
+    <input type="text" id="addNomorInduk" placeholder="Enter Nomor Induk" required>
+    <input type="text" id="addNamaBangunan" placeholder="Enter Nama Bangunan" required>
+    <input type="text" id="addNamaPemilik" placeholder="Enter Nama Pemilik" required>
+    <input type="text" id="addDistrik" placeholder="Enter Distrik" required>
+    <input type="text" id="addJalan" placeholder="Enter Jalan" required>
+    <input type="text" id="addConfirmation" placeholder='Type "tambah" to confirm' required>
+    <button type="button" onclick="addData()">Add Data</button>
+  </form>
+
+  <h2>Delete Data</h2>
+  <form id="deleteForm">
+    <input type="text" id="deleteNomorInduk" placeholder="Enter Nomor Induk" required>
+    <input type="text" id="deleteConfirmation" placeholder='Type "hapus" to confirm' required>
+    <button type="button" onclick="deleteData()">Delete Data</button>
+  </form>
+</body>
+</html>
