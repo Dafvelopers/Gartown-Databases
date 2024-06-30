@@ -79,7 +79,8 @@
       let result = null;
       if (nomorInduk) {
         result = data.find(item => item.nomorInduk === nomorInduk);
-      } else if (namaPemilik) {
+      } 
+      if (namaPemilik) {
         result = data.find(item => item.namaPemilik.toLowerCase() === namaPemilik.toLowerCase());
       }
 
