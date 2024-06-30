@@ -33,6 +33,7 @@
         const fileData = await response.json();
         const content = atob(fileData.content); // Decode base64 content
         return JSON.parse(content);
+        console.log('Data updated successfully');
       } else {
         console.error('Error fetching data:', response.status, response.statusText);
       }
