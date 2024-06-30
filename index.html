@@ -66,10 +66,37 @@
         })
       });
 
-      if (!response.ok) {
-        console.error('Error updating data:', response.status, response.statusText);
-      }
+        if (response.ok) {
+    const fileData = await response.json();
+    const sha = fileData.sha;
+
+    // Encode data in base64
+    const content = btoa(JSON.stringify(data));
+
+    // Write data to GitHub
+    const result = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: 'Update data',
+        content: content,
+        sha: sha
+      })
+    });
+
+    if (result.ok) {
+      console.log('Data updated successfully');
+    } else {
+      console.error('Error writing data:', result.status, result.statusText);
     }
+  } else {
+    console.error('Error fetching file SHA:', response.status, response.statusText);
+  }
+}
 
     async function searchData() {
       const nomorInduk = document.getElementById('searchNomorInduk').value;
